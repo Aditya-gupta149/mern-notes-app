@@ -68,9 +68,20 @@ function Login() {
         <br />
         <br />
 
-        <button type="submit">
-          Login
-        </button>
+        <button
+  type="submit"
+  style={{
+    padding: "10px 20px",
+    backgroundColor: "blue",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    marginTop: "10px"
+  }}
+>
+  Login
+</button>
 
       </form>
 
