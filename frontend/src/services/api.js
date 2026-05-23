@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://mern-notes-backend-1upw.onrender.com",
 });
 
 API.interceptors.request.use((req) => {
