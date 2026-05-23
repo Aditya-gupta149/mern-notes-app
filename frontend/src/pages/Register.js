@@ -65,9 +65,20 @@ function Register() {
 
         <br /><br />
 
-        <button type="submit">
-          Register
-        </button>
+       <button
+  type="submit"
+  style={{
+    padding: "10px 20px",
+    backgroundColor: "green",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    marginTop: "10px"
+  }}
+>
+  Register
+</button>
 
       </form>
     </div>
