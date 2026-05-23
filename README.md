@@ -53,3 +53,10 @@ npm run dev
 ## Author 👨‍💻
 
 Aditya Gupta
+
+## App Screenshot 📸
+<img width="1848" height="811" alt="Screenshot 2026-05-23 162705" src="https://github.com/user-attachments/assets/8d1dec2d-24df-4a0b-b640-c20a05125c0c" />
+
+<img width="1853" height="864" alt="Screenshot 2026-05-23 162751" src="https://github.com/user-attachments/assets/1da8b208-854e-4d49-a12b-f1e40ace2f1f" />
+
+
