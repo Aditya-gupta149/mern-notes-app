@@ -2,101 +2,208 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-
-
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: "30d",
-    });
+// Generate JWT Token
+const generateToken = (userId) => {
+    return jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d",
+        }
+    );
 };
 
-
-// SIGNUP
 const signupUser = async (req, res) => {
-
     try {
-
+        // Extract request data
         const { username, email, password } = req.body;
 
-        // check existing user
-        const userExists = await User.findOne({ email });
-
-        if (userExists) {
+        // Validate required fields
+        if (!username || !email || !password) {
             return res.status(400).json({
-                message: "User already exists"
+                success: false,
+                message: "All fields are required",
             });
         }
 
-        // hash password
-        const salt = await bcrypt.genSalt(10);
+        // Validate username
+        if (username.trim().length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: "Username must be at least 3 characters long",
+            });
+        }
 
-        const hashedPassword = await bcrypt.hash(password, salt);
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        // create user
-        const user = await User.create({
-            username,
-            email,
-            password: hashedPassword
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid email format",
+            });
+        }
+
+        // Validate password
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long",
+            });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            email: email.toLowerCase(),
         });
 
-        // generate token
-        const token = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        );
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "User already exists",
+            });
+        }
 
-        res.status(201).json({
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            token
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const user = await User.create({
+            username: username.trim(),
+            email: email.toLowerCase(),
+            password: hashedPassword,
+        });
+
+        // Generate JWT token
+        const token = generateToken(user._id);
+
+        // Store token in cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        // Send success response
+        return res.status(201).json({
+            success: true,
+            message: "Account created successfully",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+            },
         });
 
     } catch (error) {
+        console.error("Signup Error:", error);
 
-        res.status(500).json({
-            message: error.message
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
         });
-
     }
-
 };
+
 const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+    try {
+        // Extract request data
+        const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+        // Validate required fields
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required",
+            });
+        }
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-
-        res.json({
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            token: generateToken(user._id)
+        // Find user
+        const user = await User.findOne({
+            email: email.toLowerCase(),
         });
 
-    } else {
-        res.status(401).json({
-            message: "Invalid email or password"
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
+        }
+
+        // Compare password
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!isPasswordCorrect) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
+        }
+
+        // Generate JWT token
+        const token = generateToken(user._id);
+
+        // Store token in cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        // Send success response
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+            },
+        });
+
+    } catch (error) {
+        console.error("Login Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
         });
     }
 };
 
 const getProfile = async (req, res) => {
+    try {
+        // Get authenticated user
+        const user = await User.findById(req.user._id)
+            .select("-password");
 
-  try {
+        // User not found
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
 
-    const user = await User.findById(req.user.id).select("-password");
+        // Send profile
+        return res.status(200).json({
+            success: true,
+            user,
+        });
 
-    res.json(user);
+    } catch (error) {
+        console.error("Get Profile Error:", error);
 
-  } catch (error) {
-
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
 };
 
-module.exports = { signupUser, loginUser , getProfile };
+module.exports = { signupUser, loginUser, getProfile };
