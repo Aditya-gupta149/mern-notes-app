@@ -1,32 +1,31 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 const dotenv = require("dotenv");
-const userRoutes = require("./routes/userRoutes");
-const noteRoutes = require("./routes/noteRoutes");
-
 dotenv.config();
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use("/api/users", userRoutes);
-app.use("/api/notes", noteRoutes);
+const cors = require("cors");
+const express = require("express");
+const mongoose = require("mongoose");
+const cookieParser = require("cookie-parser");
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {
     console.log("MongoDB Connected");
-})
-.catch((err) => {
+}).catch((err) => {
     console.log(err);
-});
-
-app.get("/", (req, res) => {
-    res.send("API Running...");
+    process.exit(1);
 });
 
 const PORT = process.env.PORT || 5000;
+const app = express();
+
+app.use(cors());
+app.use(cookieParser());
+app.use(express.json());
+
+const userRoutes = require("./routes/userRoutes");
+const noteRoutes = require("./routes/noteRoutes");
+
+app.use("/api/users", userRoutes);
+app.use("/api/notes", noteRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

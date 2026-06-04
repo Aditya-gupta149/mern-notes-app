@@ -1,35 +1,57 @@
-import { ToastContainer } from "react-toastify";
 import "./App.css";
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 
+import Loader from "./components/Loader";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
 
 function App() {
+    return (
+        <BrowserRouter>
+            <Suspense fallback={<Loader />}>
+                <Routes>
 
-  return (
+                    {/* Protected Routes */}
+                    <Route
+                        path="/"
+                        element={
+                            <ProtectedRoute>
+                                <Home />
+                            </ProtectedRoute>
+                        }
+                    />
 
-    <BrowserRouter>
+                    {/* Public Routes */}
+                    <Route
+                        path="/login"
+                        element={
+                            <PublicRoute>
+                                <Login />
+                            </PublicRoute>
+                        }
+                    />
 
-      <Routes>
+                    <Route
+                        path="/register"
+                        element={
+                            <PublicRoute>
+                                <Register />
+                            </PublicRoute>
+                        }
+                    />
 
-        <Route path="/" element={<Home />} />
+                </Routes>
+            </Suspense>
 
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/register" element={<Register />} />
-
-      </Routes>
-
-      <ToastContainer />
-
-    </BrowserRouter>
-
-    
-
-  );
+            <ToastContainer />
+        </BrowserRouter>
+    );
 }
 
 export default App;

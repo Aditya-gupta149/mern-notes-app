@@ -1,88 +1,126 @@
 import { useState } from "react";
-import API from "../services/api";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import API from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 function Register() {
+    const navigate = useNavigate();
+    const { getCurrentUser } = useAuth();
 
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-  });
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        username: "",
+        email: "",
+        password: "",
     });
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Handle input changes
+    const handleChange = (e) => {
+        setFormData((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
+    };
 
-    try {
-      const res = await API.post("/users/signup", formData);
+    // Handle form submission
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-      console.log(res.data);
+        // Validate fields
+        if (
+            !formData.username ||
+            !formData.email ||
+            !formData.password
+        ) {
+            return toast.error("Please fill all fields");
+        }
 
-      alert("User Registered Successfully 🚀");
+        try {
+            setLoading(true);
 
-    } catch (error) {
-      console.log(error);
-      alert("Registration Failed ❌");
-    }
-  };
+            const { data } = await API.post(
+                "/users/signup",
+                formData
+            );
 
-  return (
-    <div>
-      <h1>Register Page</h1>
+            // Refresh auth state
+            await getCurrentUser();
 
-      <form onSubmit={handleSubmit}>
+            toast.success(data.message);
 
-        <input
-          type="text"
-          name="username"
-          placeholder="Enter Username"
-          onChange={handleChange}
-        />
+            navigate("/");
 
-        <br /><br />
+        } catch (error) {
+            toast.error(
+                error?.response?.data?.message ||
+                "Registration failed"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Enter Email"
-          onChange={handleChange}
-        />
+    return (
+        <div>
+            <h1>Register</h1>
 
-        <br /><br />
+            <form onSubmit={handleSubmit}>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Enter Password"
-          onChange={handleChange}
-        />
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Enter Username"
+                    value={formData.username}
+                    onChange={handleChange}
+                />
 
-        <br /><br />
+                <br />
+                <br />
 
-       <button
-  type="submit"
-  style={{
-    padding: "10px 20px",
-    backgroundColor: "green",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    marginTop: "10px"
-  }}
->
-  Register
-</button>
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter Email"
+                    value={formData.email}
+                    onChange={handleChange}
+                />
 
-      </form>
-    </div>
-  );
+                <br />
+                <br />
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                />
+
+                <br />
+                <br />
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                >
+                    {loading ? "Creating..." : "Register"}
+                </button>
+
+            </form>
+
+            <br />
+
+            <p>
+                Already have an account?{" "}
+                <Link to="/login">
+                    Login
+                </Link>
+            </p>
+
+        </div>
+    );
 }
 
 export default Register;
