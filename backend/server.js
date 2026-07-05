@@ -14,9 +14,9 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
 });
 
-const cookieParser = require("cookie-parser");
 
-app.use(cookieParser());
+
+
 
 const PORT = process.env.PORT || 5000;
 const app = express();
